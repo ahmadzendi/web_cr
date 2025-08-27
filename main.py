@@ -120,36 +120,31 @@ def get_db():
         port=PGPORT
     )
 
-@app.get("/data")
-def data():
-    # 1. Baca filter dari last_request.json
-    try:
-        with open("last_request.json", "r", encoding="utf-8") as f:
-            req = json.load(f)
-        t_awal = req.get("start", "-")
-        t_akhir = req.get("end", "-")
-        usernames = [u.lower() for u in req.get("usernames", [])]
-        mode = req.get("mode", "")
-        kata = req.get("kata", None)
-    except Exception:
-        t_awal = "-"
-        t_akhir = "-"
-        usernames = []
-        mode = ""
-        kata = None
-
-    # 2. Jika filter tidak ada, return data kosong
-    if t_awal == "-" or t_akhir == "-":
-        return {
-            "ranking": [],
-            "t_awal": "-",
-            "t_akhir": "-"
-        }
-
-    # 3. Query ke database sesuai filter
+def get_request():
     conn = get_db()
     c = conn.cursor()
-    query = "SELECT username, content, timestamp_wib, level FROM chat WHERE timestamp_wib BETWEEN %s AND %s"
+    c.execute("SELECT data FROM request ORDER BY updated_at DESC LIMIT 1")
+    row = c.fetchone()
+    c.close()
+    conn.close()
+    if row:
+        return row[0]
+    return None
+
+@app.get("/data")
+def data():
+    req = get_request()
+    if not req:
+        return {"ranking": [], "t_awal": "-", "t_akhir": "-"}
+    t_awal = req.get("start", "-")
+    t_akhir = req.get("end", "-")
+    usernames = [u.lower() for u in req.get("usernames", [])]
+    mode = req.get("mode", "")
+    kata = req.get("kata", None)
+
+    conn = get_db()
+    c = conn.cursor()
+    query = "SELECT username, content, timestamp_wib, level FROM chat WHERE timestamp_wib >= %s AND timestamp_wib <= %s"
     params = [t_awal, t_akhir]
     if kata:
         query += " AND LOWER(content) LIKE %s"
@@ -162,7 +157,6 @@ def data():
     c.close()
     conn.close()
 
-    # 4. Proses hasil query untuk ranking
     user_info = {}
     for row in rows:
         uname = row[0].lower()
@@ -178,21 +172,17 @@ def data():
             }
         else:
             user_info[uname]["count"] += 1
-            # Update last_content dan last_time jika waktu lebih baru
             if t_chat > user_info[uname]["last_time"]:
                 user_info[uname]["last_content"] = content
                 user_info[uname]["last_time"] = t_chat
                 user_info[uname]["level"] = level
 
-    # 5. Urutkan ranking
     if mode == "username" and usernames:
-        # Ambil data user yang ada, lalu urutkan dari count terbanyak
         ranking = [(u, user_info[u]) if u in user_info else (u, {"count": 0, "last_content": "-", "last_time": "-", "level": 0}) for u in usernames]
-        # Urutkan ranking berdasarkan count (jumlah chat) DESC
         ranking = sorted(ranking, key=lambda x: x[1]["count"], reverse=True)
     else:
         ranking = sorted(user_info.items(), key=lambda x: x[1]["count"], reverse=True)
-    # 6. Format output
+
     data = []
     for user, info in ranking:
         data.append({
