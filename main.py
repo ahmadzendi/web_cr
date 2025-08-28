@@ -141,6 +141,7 @@ def data():
     usernames = [u.lower() for u in req.get("usernames", [])]
     mode = req.get("mode", "")
     kata = req.get("kata", None)
+    level = req.get("level", None)
 
     conn = get_db()
     c = conn.cursor()
@@ -152,6 +153,9 @@ def data():
     if mode == "username" and usernames:
         query += " AND LOWER(username) = ANY(%s)"
         params.append(usernames)
+    if mode == "level" and level is not None:
+        query += " AND level = %s"
+        params.append(level)
     c.execute(query, params)
     rows = c.fetchall()
     c.close()
