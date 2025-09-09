@@ -139,6 +139,7 @@ def data():
     t_awal = req.get("start", "-")
     t_akhir = req.get("end", "-")
     usernames = [u.lower() for u in req.get("usernames", [])]
+    usernames_filter = [u.lower() for u in req.get("usernames", [])]
     mode = req.get("mode", "")
     kata = req.get("kata", None)
     level = req.get("level", None)
@@ -161,28 +162,36 @@ def data():
     c.close()
     conn.close()
 
+    username_map = {}
     user_info = {}
     for row in rows:
-        uname = row[0].lower()
+        uname = row[0]
+        uname_lower = uname.lower()
         content = row[1]
         t_chat = row[2]
         level = row[3]
-        if uname not in user_info:
-            user_info[uname] = {
+        if uname_lower not in user_info:
+            user_info[uname_lower] = {
+                "username": uname,
                 "count": 1,
                 "last_content": content,
                 "last_time": t_chat,
                 "level": level
             }
         else:
-            user_info[uname]["count"] += 1
-            if t_chat > user_info[uname]["last_time"]:
-                user_info[uname]["last_content"] = content
-                user_info[uname]["last_time"] = t_chat
-                user_info[uname]["level"] = level
+            user_info[uname_lower]["count"] += 1
+            if t_chat > user_info[uname_lower]["last_time"]:
+                user_info[uname_lower]["last_content"] = content
+                user_info[uname_lower]["last_time"] = t_chat
+                user_info[uname_lower]["level"] = level
 
     if mode == "username" and usernames:
-        ranking = [(u, user_info[u]) if u in user_info else (u, {"count": 0, "last_content": "-", "last_time": "-", "level": 0}) for u in usernames]
+        ranking = []
+        for u in usernames_filter:
+            if u in user_info:
+                ranking.append((user_info[u]["username"], user_info[u]))
+            else:
+                ranking.append((u, {"username": u, "count": 0, "last_content": "-", "last_time": "-", "level": 0}))
         ranking = sorted(ranking, key=lambda x: x[1]["count"], reverse=True)
     else:
         ranking = sorted(user_info.items(), key=lambda x: x[1]["count"], reverse=True)
