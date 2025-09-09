@@ -194,7 +194,7 @@ def data():
                 ranking.append((u, {"username": u, "count": 0, "last_content": "-", "last_time": "-", "level": 0}))
         ranking = sorted(ranking, key=lambda x: x[1]["count"], reverse=True)
     else:
-        ranking = sorted(user_info.items(), key=lambda x: x[1]["count"], reverse=True)
+        ranking = sorted([(info["username"], info) for info in user_info.values()], key=lambda x: x[1]["count"], reverse=True)
 
     data = []
     for user, info in ranking:
