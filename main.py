@@ -63,6 +63,11 @@ def index():
             table.dataTable thead th { font-weight: bold; }
             .btn-history { display:inline-block; margin-bottom:20px; padding:8px 16px; background:#00abff; color:#fff; border:none; border-radius:4px; text-decoration:none;}
             .btn-history:hover { background:#0056b3; }
+            .cusername {
+                color: #A0B6C8;
+                font-weight: bold;
+                cursor: pointer;
+            }
             .level-0 { color: #000000 !important; }
             .level-1 { color: #CD7F32 !important; }
             .level-2 { color: #FFA500 !important; }
@@ -119,9 +124,9 @@ def index():
                     var row = data.ranking[i];
                     table.row.add([
                         i+1,
-                        `<span class="level-${row.level}">${row.username}</span>`,
+                        `<span class="level-${row.level} cusername">${row.username}</span>`,
                         row.count,
-                        `<span class="level-${row.level}">${row.last_content}</span>`,
+                        `<span class="level-${row.level} cusername">${row.last_content}</span>`,
                         row.last_time
                     ]);
                 }
