@@ -10,11 +10,11 @@ import time
 app = FastAPI()
 
 # Railway akan otomatis mengisi env ini dari PostgreSQL Addon
-PGHOST = os.environ.get("PGHOST", "localhost")
-PGPORT = os.environ.get("PGPORT", "5432")
-PGUSER = os.environ.get("PGUSER", "postgres")
-PGPASSWORD = os.environ.get("PGPASSWORD", "password")
-POSTGRES_DB = os.environ.get("POSTGRES_DB", "postgres")
+PGHOST = os.environ.get("PGHOST", "")
+PGPORT = os.environ.get("PGPORT", "")
+PGUSER = os.environ.get("PGUSER", "")
+PGPASSWORD = os.environ.get("PGPASSWORD", "")
+POSTGRES_DB = os.environ.get("POSTGRES_DB", "")
 
 # Connection Pool
 db_pool = pool.SimpleConnectionPool(
@@ -67,7 +67,7 @@ def index():
             .level-1 { color: #CD7F32 !important; }
             .level-2 { color: #FFA500 !important; }
             .level-3 { color: #0000FF !important; }
-            .level-4 { color: #00FF00 !important; }
+            .level-4 { color: #00E124; text-shadow: 1px 1px #00B31C; }
             .level-5 { color: #FF00FF !important; }
             th, td {
                 vertical-align: top;
