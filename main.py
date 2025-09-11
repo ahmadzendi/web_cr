@@ -3,6 +3,7 @@ import json
 import psycopg2
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
+from datetime import datetime
 
 app = FastAPI()
 
@@ -12,14 +13,34 @@ PGUSER = os.environ.get("PGUSER", "")
 PGPASSWORD = os.environ.get("PGPASSWORD", "")
 POSTGRES_DB = os.environ.get("POSTGRES_DB", "")
 
-conn = psycopg2.connect(
-    dbname=POSTGRES_DB,
-    user=PGUSER,
-    password=PGPASSWORD,
-    host=PGHOST,
-    port=PGPORT
-)
-c = conn.cursor()
+def get_db():
+    return psycopg2.connect(
+        dbname=POSTGRES_DB,
+        user=PGUSER,
+        password=PGPASSWORD,
+        host=PGHOST,
+        port=PGPORT
+    )
+
+def get_request():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT data FROM request ORDER BY updated_at DESC LIMIT 1")
+    row = c.fetchone()
+    c.close()
+    conn.close()
+    if row:
+        return row[0]
+    return None
+
+def parse_time(t):
+    if isinstance(t, datetime):
+        return t
+    try:
+        # Jika format waktu kamu berbeda, sesuaikan di sini
+        return datetime.fromisoformat(str(t))
+    except Exception:
+        return datetime.min
 
 @app.get("/", response_class=HTMLResponse)
 def index():
@@ -111,26 +132,6 @@ def index():
     """
     return html
 
-def get_db():
-    return psycopg2.connect(
-        dbname=POSTGRES_DB,
-        user=PGUSER,
-        password=PGPASSWORD,
-        host=PGHOST,
-        port=PGPORT
-    )
-
-def get_request():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT data FROM request ORDER BY updated_at DESC LIMIT 1")
-    row = c.fetchone()
-    c.close()
-    conn.close()
-    if row:
-        return row[0]
-    return None
-
 @app.get("/data")
 def data():
     req = get_request()
@@ -162,7 +163,6 @@ def data():
     c.close()
     conn.close()
 
-    username_map = {}
     user_info = {}
     for row in rows:
         uname = row[0]
@@ -180,11 +180,13 @@ def data():
             }
         else:
             user_info[uname_lower]["count"] += 1
+            # Update jika chat lebih baru
             if t_chat > user_info[uname_lower]["last_time"]:
                 user_info[uname_lower]["last_content"] = content
                 user_info[uname_lower]["last_time"] = t_chat
                 user_info[uname_lower]["level"] = level
 
+    # Sorting
     if mode == "username" and usernames:
         ranking = []
         for u in usernames_filter:
@@ -192,9 +194,15 @@ def data():
                 ranking.append((user_info[u]["username"], user_info[u]))
             else:
                 ranking.append((u, {"username": u, "count": 0, "last_content": "-", "last_time": "-", "level": 0}))
-        ranking = sorted(ranking, key=lambda x: x[1]["count"], reverse=True)
+        ranking = sorted(
+            ranking,
+            key=lambda x: (-x[1]["count"], parse_time(x[1]["last_time"]))
+        )
     else:
-        ranking = sorted([(info["username"], info) for info in user_info.values()], key=lambda x: x[1]["count"], reverse=True)
+        ranking = sorted(
+            [(info["username"], info) for info in user_info.values()],
+            key=lambda x: (-x[1]["count"], parse_time(x[1]["last_time"]))
+        )
 
     data = []
     for user, info in ranking:
