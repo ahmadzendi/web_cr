@@ -68,12 +68,12 @@ def index():
                 font-weight: bold;
                 cursor: pointer;
             }
-            .level-0 { color: #000000 !important; }
-            .level-1 { color: #CD7F32 !important; }
-            .level-2 { color: #FFA500 !important; }
-            .level-3 { color: #0000FF !important; }
+            .level-0 { color: #5E5E5E; }
+            .level-1 { color: #5B2D00; }
+            .level-2 { color: #FF8200; text-shadow: 1px 1px #CCCCCC; }
+            .level-3 { color: #034AC4; text-shadow: 1px 1px #CCCCCC; }
             .level-4 { color: #00E124; text-shadow: 1px 1px #00B31C; }
-            .level-5 { color: #FF00FF !important; }
+            .level-5 { color: #B232B2 }
             th, td {
                 vertical-align: top;
             }
